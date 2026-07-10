@@ -1,94 +1,46 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import Disclaimer from './components/Disclaimer';
-import { createConversation, sendMessage, generateReport, checkComplete } from './services/api';
+import ChatInterface from './components/ChatInterface';
+import ReportDisplay from './components/ReportDisplay';
+import { createConversation, generateReport, checkComplete } from './services/api';
 import './App.css';
 
 function App() {
-  const [messages, setMessages] = useState([]);
   const [conversationId, setConversationId] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [report, setReport] = useState(null);
-  const [input, setInput] = useState('');
-  const messagesEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [error, setError] = useState(null);
 
   const startConversation = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
       const conv = await createConversation();
       setConversationId(conv._id);
-      setMessages([]);
       setIsComplete(false);
       setReport(null);
-      
-      setMessages([{
-        role: 'assistant',
-        content: 'Hello! I\'m your AI Mutual Fund Advisor. 🎯\n\nI\'m here to help you understand mutual funds and create a personalized investment plan. To get started, tell me about your investment goals. Are you saving for retirement, education, or wealth creation?'
-      }]);
-    } catch (error) {
-      console.error('Error starting conversation:', error);
-    }
-  };
-
-  const handleSend = async () => {
-    if (!input.trim() || isLoading || isComplete) return;
-
-    const userMessage = input.trim();
-    setInput('');
-    
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-    setIsLoading(true);
-
-    try {
-      let currentId = conversationId;
-      if (!currentId) {
-        const conv = await createConversation();
-        currentId = conv._id;
-        setConversationId(currentId);
-      }
-
-      const response = await sendMessage(currentId, userMessage);
-      
-      setMessages(prev => [...prev, { role: 'assistant', content: response.message }]);
-
-      const status = await checkComplete(currentId);
-      if (status.isComplete) {
-        setIsComplete(true);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: 'Sorry, I encountered an error. Please try again.' 
-      }]);
+      setShowReport(false);
+    } catch (err) {
+      setError('Failed to start a new session. Please try again.');
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   const handleGenerateReport = async () => {
     if (!conversationId) return;
-    
     setIsLoading(true);
+    setError(null);
     try {
       const result = await generateReport(conversationId);
       setReport(result);
-    } catch (error) {
-      console.error('Error generating report:', error);
+      setShowReport(true);
+    } catch (err) {
+      setError('Failed to generate your report. Please check your connection.');
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -99,136 +51,91 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
-        <header className="text-center mb-6">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
-            🎯 AI Mutual Fund Advisor
+    <div className="min-h-screen bg-slate-50 text-slate-800 antialiased selection:bg-indigo-500 selection:text-white">
+      <div className="max-w-3xl mx-auto px-4 py-8 md:py-12">
+        
+        {/* Elegant Header */}
+        <header className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full text-indigo-700 text-xs font-semibold mb-3">
+            <span>✨ AI-Powered Wealth Intelligence</span>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent">
+            AI Mutual Fund Advisor
           </h1>
-          <p className="text-gray-600 mt-1 text-sm md:text-base">
-            Voice-driven investment guidance for beginners
+          <p className="text-slate-500 mt-2 text-sm md:text-base max-w-md mx-auto">
+            Voice-driven investment guidance designed to make financial growth simple for beginners.
           </p>
         </header>
 
-        <Disclaimer />
-
-        {!report ? (
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="h-96 overflow-y-auto mb-4 p-4 bg-gray-50 rounded-lg">
-              {messages.length === 0 ? (
-                <div className="text-center text-gray-400 mt-32">
-                  <p className="text-lg">💬 Start your investment journey</p>
-                  <p className="text-sm mt-2">Tell me about your investment goals</p>
-                </div>
-              ) : (
-                messages.map((msg, index) => (
-                  <div key={index} className={"mb-3 flex " + (msg.role === 'user' ? 'justify-end' : 'justify-start')}>
-                    <div className={"max-w-xs lg:max-w-md px-4 py-2 rounded-lg whitespace-pre-wrap " + (msg.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800')}>
-                      {msg.content}
-                    </div>
-                  </div>
-                ))
-              )}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg">
-                    <span className="inline-block w-2 h-2 bg-gray-500 rounded-full animate-pulse mx-0.5"></span>
-                    <span className="inline-block w-2 h-2 bg-gray-500 rounded-full animate-pulse mx-0.5" style={{ animationDelay: '0.2s' }}></span>
-                    <span className="inline-block w-2 h-2 bg-gray-500 rounded-full animate-pulse mx-0.5" style={{ animationDelay: '0.4s' }}></span>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={isLoading || isComplete}
-              />
-              <button
-                onClick={handleSend}
-                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
-                disabled={isLoading || isComplete || !input.trim()}
-              >
-                Send
-              </button>
-            </div>
-
-            {isComplete && (
-              <div className="mt-4">
-                <button
-                  onClick={handleGenerateReport}
-                  disabled={isLoading}
-                  className="w-full py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
-                >
-                  {isLoading ? 'Generating...' : '📊 Generate Report'}
-                </button>
-              </div>
-            )}
-
-            <button
-              onClick={startConversation}
-              className="mt-2 text-sm text-gray-500 hover:text-gray-700 underline"
-            >
-              🔄 Start New Conversation
-            </button>
-          </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">📊 Your Investment Report</h2>
-            
-            <div className="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
-              <p className="text-xs text-yellow-800">
-                ⚠️ <span className="font-semibold">Disclaimer:</span> {report.disclaimer}
-              </p>
-            </div>
-
-            <div className="prose max-w-none">
-              <div className="whitespace-pre-wrap text-gray-700">{report.summary}</div>
-            </div>
-
-            {report.recommendations && report.recommendations.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Recommended Funds</h3>
-                <div className="grid gap-3">
-                  {report.recommendations.map((rec, idx) => (
-                    <div key={idx} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-semibold text-gray-800">{rec.schemeName}</h4>
-                          <p className="text-sm text-gray-600">Allocation: {rec.allocation}%</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm"><span className="font-medium">CAGR:</span> {rec.cagr}%</p>
-                          <p className="text-sm"><span className="font-medium">Volatility:</span> {rec.volatility}%</p>
-                        </div>
-                      </div>
-                      {rec.reason && (
-                        <p className="text-sm text-gray-600 mt-2">{rec.reason}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={() => {
-                setReport(null);
-                startConversation();
-              }}
-              className="mt-6 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              🔄 Start New Conversation
-            </button>
+        {/* Global Error Banner */}
+        {error && (
+          <div className="mb-6 p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-sm flex items-center gap-2">
+            ⚠️ {error}
           </div>
         )}
+
+        {/* Main Content Area */}
+        <main className="space-y-6">
+          {showReport && report ? (
+            <ReportDisplay 
+              report={report} 
+              onNewChat={startConversation} 
+            />
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-xl shadow-slate-100/50 overflow-hidden transition-all duration-300">
+              
+              {/* Dynamic Header Block */}
+              <div className={`p-5 border-b border-slate-100 flex items-center justify-between ${isComplete ? 'bg-emerald-50/40' : 'bg-slate-50/50'}`}>
+                <div className="flex items-center gap-2">
+                  <span className={`h-2.5 w-2.5 rounded-full ${isComplete ? 'bg-emerald-500 animate-pulse' : 'bg-indigo-500'}`} />
+                  <h2 className="font-semibold text-slate-700 text-sm md:text-base">
+                    {isComplete ? 'Conversation Analysis Ready' : 'Live Consultation Session'}
+                  </h2>
+                </div>
+                
+                <button 
+                  onClick={startConversation}
+                  disabled={isLoading}
+                  className="text-xs font-medium text-slate-500 hover:text-indigo-600 flex items-center gap-1 transition-colors disabled:opacity-50"
+                >
+                  🔄 Reset Session
+                </button>
+              </div>
+
+              {/* Chat Interface Container */}
+              <div className="p-6">
+                <ChatInterface 
+                  conversationId={conversationId} 
+                  onMessageSent={() => {}} 
+                  onComplete={() => setIsComplete(true)} 
+                />
+
+                {/* Sticky Action Footer when complete */}
+                {isComplete && (
+                  <div className="mt-6 pt-6 border-t border-slate-100 bg-gradient-to-b from-white to-slate-50/50 rounded-b-2xl">
+                    <button 
+                      onClick={handleGenerateReport} 
+                      disabled={isLoading}
+                      className="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-xl shadow-lg shadow-indigo-600/20 font-medium transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+                    >
+                      {isLoading ? (
+                        <>⏳ Mapping Portfolio Algorithms...</>
+                      ) : (
+                        <>📊 Generate Personal Investment Report</>
+                      )}
+                    </button>
+                    <p className="text-xs text-slate-400 mt-3 text-center px-4">
+                      Compiling tailored index allocations and risk parameters based on your conversation profiles.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Disclaimer at Bottom */}
+          <Disclaimer />
+        </main>
       </div>
     </div>
   );
