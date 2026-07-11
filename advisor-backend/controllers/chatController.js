@@ -1,7 +1,6 @@
 ﻿const Conversation = require('../models/Conversation');
-const ollamaService = require('../services/ollamaService');
+const groqService = require('../services/groqService');
 
-// Send message and get AI response
 exports.sendMessage = async (req, res) => {
   try {
     const { id } = req.params;
@@ -11,48 +10,29 @@ exports.sendMessage = async (req, res) => {
       return res.status(400).json({ error: 'Message content is required' });
     }
 
-    // Find conversation
+    if (!id || id === 'null' || id === 'undefined') {
+      return res.status(400).json({ error: 'Invalid conversation ID' });
+    }
+
     const conversation = await Conversation.findById(id);
     if (!conversation) {
       return res.status(404).json({ error: 'Conversation not found' });
     }
 
-    // Add user message
-    conversation.messages.push({
-      role: 'user',
-      content: content
-    });
-
+    conversation.messages.push({ role: 'user', content: content });
     console.log('Getting AI response for:', content);
 
-    // Get AI response (with fallback)
-    let aiResponse = '';
-    try {
-      aiResponse = await ollamaService.getConversationResponse(
-        conversation.messages.slice(0, -1),
-        content,
-        conversation.profile
-      );
-    } catch (error) {
-      console.error('Ollama error, using fallback:', error.message);
-      aiResponse = 'I understand you want to invest. Could you tell me more about your investment goals and risk tolerance? This will help me provide better guidance.';
-    }
+    let aiResponse = await groqService.getConversationResponse(
+      conversation.messages.slice(0, -1),
+      content,
+      conversation.profile
+    );
 
-    // Add AI response
-    conversation.messages.push({
-      role: 'assistant',
-      content: aiResponse
-    });
-
-    // Try to extract profile info from conversation
+    conversation.messages.push({ role: 'assistant', content: aiResponse });
     await extractProfile(conversation);
-
     await conversation.save();
 
-    res.json({
-      message: aiResponse,
-      conversation: conversation
-    });
+    res.json({ message: aiResponse, conversation: conversation });
 
   } catch (error) {
     console.error('Error in chat:', error);
@@ -60,70 +40,67 @@ exports.sendMessage = async (req, res) => {
   }
 };
 
-// Extract profile information from conversation
 async function extractProfile(conversation) {
   const messages = conversation.messages;
   const profile = conversation.profile || {};
+  const userMessages = messages.filter(m => m.role === 'user').map(m => m.content);
+  const text = userMessages.join(' ').toLowerCase();
 
-  const text = messages.map(m => m.content).join(' ').toLowerCase();
-
-  // Extract risk tolerance
   if (!profile.riskTolerance) {
     if (text.includes('high risk') || text.includes('aggressive') || text.includes('maximum returns')) {
       profile.riskTolerance = 'high';
-    } else if (text.includes('low risk') || text.includes('conservative') || text.includes('safe') || text.includes('protect')) {
+    } else if (text.includes('low risk') || text.includes('conservative') || text.includes('safe')) {
       profile.riskTolerance = 'low';
     } else if (text.includes('moderate') || text.includes('medium') || text.includes('balanced')) {
       profile.riskTolerance = 'medium';
     }
   }
 
-  // Extract investment horizon
   if (!profile.investmentHorizon) {
-    if (text.includes('short term') || text.includes('1 year') || text.includes('2 year') || text.includes('few months')) {
+    if (text.includes('short term') || text.includes('1 year') || text.includes('2 year')) {
       profile.investmentHorizon = 'short';
-    } else if (text.includes('long term') || text.includes('10 year') || text.includes('retirement') || text.includes('future')) {
+    } else if (text.includes('long term') || text.includes('10 year') || text.includes('retirement')) {
       profile.investmentHorizon = 'long';
     } else if (text.includes('medium') || text.includes('5 year')) {
       profile.investmentHorizon = 'medium';
     }
   }
 
-  // Extract monthly amount
   if (!profile.monthlyAmount) {
-    const match = text.match(/(\d+)\s*(k|thousand|lakh|crore)?/);
+    const match = text.match(/(?:invest|amount|monthly)\s*(\d+)/i);
     if (match) {
-      let amount = parseInt(match[1]);
-      if (match[2] === 'k' || match[2] === 'thousand') amount *= 1000;
-      if (match[2] === 'lakh') amount *= 100000;
-      if (match[2] === 'crore') amount *= 10000000;
-      profile.monthlyAmount = amount;
+      const amount = parseInt(match[1]);
+      if (amount > 100) profile.monthlyAmount = amount;
     }
   }
 
-  // Extract age
   if (!profile.age) {
-    const match = text.match(/(\d+)\s*(years?|yrs?|y)/);
+    const match = text.match(/(?:i am|age|old)\s*(\d+)/i);
     if (match) {
-      profile.age = parseInt(match[1]);
+      const age = parseInt(match[1]);
+      if (age > 15 && age < 100) profile.age = age;
     }
   }
 
-  // Check if profile is complete
+  if (!profile.goal) {
+    if (text.includes('retirement')) profile.goal = 'retirement';
+    else if (text.includes('education') || text.includes('child')) profile.goal = 'education';
+    else if (text.includes('wealth') || text.includes('growth')) profile.goal = 'wealth creation';
+  }
+
   const requiredFields = ['riskTolerance', 'investmentHorizon', 'monthlyAmount'];
   const hasAll = requiredFields.every(f => profile[f] !== null && profile[f] !== undefined);
-  
-  if (hasAll && !conversation.completed) {
-    conversation.completed = true;
-  }
+  if (hasAll && !conversation.completed) conversation.completed = true;
 
   conversation.profile = profile;
 }
 
-// Get AI suggestion for next question
 exports.getNextQuestion = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!id || id === 'null' || id === 'undefined') {
+      return res.status(400).json({ error: 'Invalid conversation ID' });
+    }
     
     const conversation = await Conversation.findById(id);
     if (!conversation) {
@@ -132,7 +109,6 @@ exports.getNextQuestion = async (req, res) => {
 
     const profile = conversation.profile || {};
     const missing = [];
-
     if (!profile.riskTolerance) missing.push('risk tolerance');
     if (!profile.investmentHorizon) missing.push('investment horizon');
     if (!profile.monthlyAmount) missing.push('monthly investment amount');
@@ -154,10 +130,8 @@ exports.getNextQuestion = async (req, res) => {
       'age': 'May I know your age? This helps me suggest appropriate investment strategies.'
     };
 
-    const nextQuestion = questionPrompts[missing[0]] || 'Tell me more about your investment preferences.';
-
     res.json({
-      message: nextQuestion,
+      message: questionPrompts[missing[0]] || 'Tell me more about your investment preferences.',
       missingFields: missing,
       isComplete: false
     });
@@ -167,10 +141,12 @@ exports.getNextQuestion = async (req, res) => {
   }
 };
 
-// Check if conversation is complete
 exports.checkComplete = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!id || id === 'null' || id === 'undefined') {
+      return res.status(400).json({ error: 'Invalid conversation ID' });
+    }
     
     const conversation = await Conversation.findById(id);
     if (!conversation) {

@@ -1,4 +1,4 @@
-﻿import requests
+import requests
 import pandas as pd
 from typing import Dict, Any, List
 
@@ -34,7 +34,7 @@ class FundService:
         data = self.fetch_fund_data(scheme_code)
         
         df = pd.DataFrame(data['data'])
-        df['date'] = pd.to_datetime(df['date'])
+        df['date'] = pd.to_datetime(df['date'], format='%d-%m-%Y')
         df['nav'] = df['nav'].astype(float)
         df = df.sort_values('date')
         
