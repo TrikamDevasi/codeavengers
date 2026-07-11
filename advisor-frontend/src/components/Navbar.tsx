@@ -1,21 +1,21 @@
-﻿import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Menu, X, User as UserIcon, Sun, Moon } from 'lucide-react';
+import { Mic, Menu, X, User as UserIcon, Sun, Moon, LogOut, ChevronDown, AudioLines } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
 const NAV_ITEMS = [
   { id: 'how-it-works', label: 'How It Works', href: '/#how-it-works' },
-  { id: 'voice-assessment', label: 'Voice Assessment', href: '/disclaimer' },
   { id: 'reports', label: 'Sample Briefing', href: '/report' },
   { id: 'about', label: 'About', href: '/#about' },
-  { id: 'disclaimer', label: 'Disclaimer', href: '/disclaimer' },
 ] as const;
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -35,6 +35,18 @@ export default function Navbar() {
     document.body.style.overflow = isMobileOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [isMobileOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isDropdownOpen]);
 
   const handleNavClick = (href: string) => {
     if (href.startsWith('/#')) {
@@ -62,9 +74,8 @@ export default function Navbar() {
           backgroundColor: isScrolled
             ? 'color-mix(in sRGB, var(--theme-surface) 90%, transparent)'
             : 'color-mix(in sRGB, var(--theme-bg) 80%, transparent)',
-          borderBottomColor: isScrolled ? 'var(--theme-border)' : 'var(--theme-border)',
         }}
-        className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out border-b backdrop-blur-md"
+        className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out backdrop-blur-md"
       >
         <div
           className={
@@ -76,15 +87,15 @@ export default function Navbar() {
           <button
             onClick={() => navigate('/')}
             className="flex items-center gap-2 group shrink-0 focus:outline-none cursor-pointer"
-            aria-label="Aura Home"
+            aria-label="Vox Home"
           >
             <div
               className="w-7.5 h-7.5 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-[1.03]"
               style={{ backgroundColor: 'var(--theme-brand)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)' }}
             >
-              <Mic className="text-white w-4 h-4" strokeWidth={2.25} />
+              <AudioLines className="text-white w-4 h-4" strokeWidth={2.25} />
             </div>
-            <span className="font-serif font-bold text-lg tracking-tight" style={{ color: 'var(--theme-text)' }}>Aura</span>
+            <span className="font-serif font-bold text-lg tracking-tight" style={{ color: 'var(--theme-text)' }}>Vox</span>
           </button>
 
           {/* Center: Desktop Nav */}
@@ -117,45 +128,112 @@ export default function Navbar() {
 
           {/* Right: Theme Toggle + CTA + Auth + Mobile Menu */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              style={{ color: 'var(--theme-text-muted)' }}
-              className="w-9 h-9 rounded-lg flex items-center justify-center hover:opacity-90 transition-all duration-200 focus:outline-none cursor-pointer border border-transparent hover:border-[var(--theme-border)] hover:bg-[var(--theme-border)]"
-            >
-              {theme === 'dark'
-                ? <Sun size={16} strokeWidth={2} />
-                : <Moon size={16} strokeWidth={2} />}
-            </button>
-
             {user ? (
-              <div className="flex items-center gap-2 mr-1">
+              <div className="relative mr-1" ref={dropdownRef}>
                 <button
-                  onClick={() => navigate('/dashboard')}
-                  style={{ color: 'var(--theme-text)' }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors focus:outline-none cursor-pointer hover:opacity-80"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  style={{ borderColor: 'var(--theme-border)' }}
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all duration-200 focus:outline-none cursor-pointer hover:opacity-80 border"
                 >
-                  <UserIcon size={14} />
-                  <span className="truncate max-w-[100px] sm:max-w-[150px]">
-                    {user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Profile'}
-                  </span>
+                  {user?.user_metadata?.avatar_url ? (
+                    <img
+                      src={user.user_metadata.avatar_url}
+                      alt=""
+                      className="w-7 h-7 rounded-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div style={{ backgroundColor: 'var(--theme-brand)' }} className="w-7 h-7 rounded-full flex items-center justify-center">
+                      <UserIcon size={14} className="text-white" />
+                    </div>
+                  )}
+                  <ChevronDown
+                    size={14}
+                    style={{ color: 'var(--theme-text-muted)', transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms' }}
+                  />
                 </button>
-                <button
-                  onClick={() => signOut()}
-                  style={{ color: 'var(--theme-text-muted)' }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-colors focus:outline-none cursor-pointer hover:opacity-70"
-                >
-                  Sign Out
-                </button>
+
+                {isDropdownOpen && (
+                  <div
+                    style={{ backgroundColor: 'var(--theme-surface)', borderColor: 'var(--theme-border)', boxShadow: '4px 4px 0 var(--theme-ink)' }}
+                    className="absolute right-0 top-full mt-2 w-56 rounded-xl border overflow-hidden z-50"
+                  >
+                    <div style={{ borderBottomColor: 'var(--theme-border)' }} className="px-4 py-3 border-b flex items-center gap-3">
+                      {user?.user_metadata?.avatar_url ? (
+                        <img
+                          src={user.user_metadata.avatar_url}
+                          alt=""
+                          className="w-9 h-9 rounded-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div style={{ backgroundColor: 'var(--theme-brand)' }} className="w-9 h-9 rounded-full flex items-center justify-center">
+                          <UserIcon size={16} className="text-white" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p style={{ color: 'var(--theme-text)' }} className="text-sm font-semibold truncate">
+                          {user?.user_metadata?.full_name || user?.user_metadata?.name || 'User'}
+                        </p>
+                        <p style={{ color: 'var(--theme-text-muted)' }} className="text-xs truncate">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="py-1">
+                      <button
+                        onClick={() => { setIsDropdownOpen(false); navigate('/dashboard'); }}
+                        style={{ color: 'var(--theme-text)' }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer hover:opacity-80"
+                      >
+                        <UserIcon size={15} />
+                        Profile
+                      </button>
+
+                      <button
+                        onClick={toggleTheme}
+                        style={{ color: 'var(--theme-text)' }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer hover:opacity-80"
+                      >
+                        {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+                        {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                      </button>
+                    </div>
+
+                    <div style={{ borderTopColor: 'var(--theme-border)' }} className="border-t py-1">
+                      <button
+                        onClick={() => { setIsDropdownOpen(false); signOut(); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer hover:opacity-80"
+                        style={{ color: '#dc2626' }}
+                      >
+                        <LogOut size={15} />
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
-              <button
-                onClick={() => navigate('/signin')}
-                style={{ color: 'var(--theme-text-muted)' }}
-                className="text-xs font-semibold uppercase tracking-wider transition-colors mr-1 focus:outline-none cursor-pointer hover:opacity-70"
-              >
-                Sign In
-              </button>
+              <>
+                <button
+                  onClick={toggleTheme}
+                  aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                  style={{ color: 'var(--theme-text-muted)' }}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center hover:opacity-90 transition-all duration-200 focus:outline-none cursor-pointer border border-transparent hover:border-[var(--theme-border)] hover:bg-[var(--theme-border)]"
+                >
+                  {theme === 'dark'
+                    ? <Sun size={16} strokeWidth={2} />
+                    : <Moon size={16} strokeWidth={2} />}
+                </button>
+                <button
+                  onClick={() => navigate('/signin')}
+                  style={{ color: 'var(--theme-text-muted)' }}
+                  className="text-xs font-semibold uppercase tracking-wider transition-colors mr-1 focus:outline-none cursor-pointer hover:opacity-70"
+                >
+                  Sign In
+                </button>
+              </>
             )}
 
             <button
@@ -211,9 +289,9 @@ export default function Navbar() {
               <div style={{ borderBottomColor: 'var(--theme-border)' }} className="flex items-center justify-between px-6 h-16 border-b shrink-0">
                 <div className="flex items-center gap-2.5">
                   <div style={{ backgroundColor: 'var(--theme-brand)' }} className="w-7 h-7 rounded-md flex items-center justify-center">
-                    <Mic className="text-white w-4 h-4" strokeWidth={2.25} />
+                    <AudioLines className="text-white w-4 h-4" strokeWidth={2.25} />
                   </div>
-                  <span style={{ color: 'var(--theme-text)' }} className="font-serif font-bold text-lg tracking-tight">Aura</span>
+                  <span style={{ color: 'var(--theme-text)' }} className="font-serif font-bold text-lg tracking-tight">Vox</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
