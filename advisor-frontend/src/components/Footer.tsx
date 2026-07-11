@@ -1,5 +1,5 @@
 ﻿import { Link } from 'react-router-dom';
-import { Mic, ShieldCheck, ArrowUpRight, Github } from 'lucide-react';
+import { Mic, ShieldCheck, ArrowUpRight, Github, AudioLines } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -22,9 +22,9 @@ export default function Footer() {
                 className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform duration-200 group-hover:scale-[1.03]"
                 style={{ backgroundColor: 'var(--theme-brand)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)' }}
               >
-                <Mic className="text-white w-4.5 h-4.5" strokeWidth={2.25} />
+                <AudioLines className="text-white w-4.5 h-4.5" strokeWidth={2.25} />
               </div>
-              <span className="font-serif font-bold text-xl tracking-tight">Aura</span>
+              <span className="font-serif font-bold text-xl tracking-tight">Vox</span>
             </Link>
             <p style={{ color: 'var(--theme-text-muted)' }} className="text-sm leading-relaxed max-w-xs pr-4 mb-6">
               Voice-first educational mutual fund guidance. Building financial literacy through conversational AI and historical data.
@@ -53,7 +53,7 @@ export default function Footer() {
 
           <div className="flex flex-col gap-3.5">
             <h3 style={{ color: 'var(--theme-text)' }} className="font-semibold text-sm tracking-wide mb-1">Company</h3>
-            <FooterLink href="/#about">About Aura</FooterLink>
+            <FooterLink href="/#about">About Vox</FooterLink>
             <FooterLink href="/#">Our Team</FooterLink>
             <FooterLink href="/#">Contact</FooterLink>
             <FooterLink href="/#">Careers</FooterLink>
@@ -93,7 +93,7 @@ export default function Footer() {
           <div>
             <h4 style={{ color: 'var(--theme-text)' }} className="text-[13px] font-semibold mb-0.5">Educational purposes only</h4>
             <p style={{ color: 'var(--theme-text-muted)' }} className="text-[12px] leading-relaxed max-w-4xl">
-              Aura is a sandbox tool. All analytics and volatility metrics are mapped from historical mutual fund NAV data. Past performance does not guarantee future returns. This product does not provide personalized SEBI-registered investment advice or facilitate transactions.
+              Vox is a sandbox tool. All analytics and volatility metrics are mapped from historical mutual fund NAV data. Past performance does not guarantee future returns. This product does not provide personalized SEBI-registered investment advice or facilitate transactions.
             </p>
           </div>
         </div>
@@ -104,7 +104,7 @@ export default function Footer() {
           className="border-t pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-[13px]"
         >
           <div style={{ color: 'var(--theme-text-soft)' }}>
-            &copy; {currentYear} Aura. All rights reserved.
+            &copy; {currentYear} Vox. All rights reserved.
           </div>
           <div style={{ color: 'var(--theme-text-soft)' }} className="flex items-center gap-1.5 font-medium">
             Built with
