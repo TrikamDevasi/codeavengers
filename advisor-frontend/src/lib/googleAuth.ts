@@ -1,6 +1,6 @@
 ﻿import supabase from './supabase';
 
-export async function signInWithGoogle(appName: string = 'Aura') {
+export async function signInWithGoogle(appName: string = 'Vox') {
   if (!supabase) {
     console.warn('[google-auth] Supabase not configured');
     return;
