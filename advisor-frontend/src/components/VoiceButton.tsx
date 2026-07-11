@@ -1,4 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { Mic, MicOff } from 'lucide-react';
 
 interface VoiceButtonProps {
   onTranscript: (transcript: string) => void;
@@ -71,8 +72,12 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({ onTranscript, isListening, se
 
   if (!isSupported) {
     return (
-      <button className="px-3 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed opacity-50 text-sm">
-        🎤 Unavailable
+      <button
+        className="px-3 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed opacity-50 text-sm flex items-center gap-1.5"
+        aria-label="Voice input unavailable"
+      >
+        <MicOff size={16} />
+        <span>Unavailable</span>
       </button>
     );
   }
@@ -80,15 +85,16 @@ const VoiceButton: React.FC<VoiceButtonProps> = ({ onTranscript, isListening, se
   return (
     <button
       onClick={toggleRecording}
+      aria-label={isListening ? 'Stop recording' : 'Start voice input'}
       className={
         'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5 ' +
-        (isListening 
-          ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-200' 
+        (isListening
+          ? 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-200'
           : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md hover:shadow-lg')
       }
       title={isListening ? 'Stop recording' : 'Start voice input'}
     >
-      <span className="text-base">{isListening ? '⏹' : '🎤'}</span>
+      {isListening ? <MicOff size={16} /> : <Mic size={16} />}
       <span>{isListening ? 'Listening...' : 'Voice'}</span>
     </button>
   );
