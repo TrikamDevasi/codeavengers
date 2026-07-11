@@ -1,6 +1,6 @@
 ﻿import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { Mic, LineChart, ShieldCheck, BookOpen } from 'lucide-react';
+import { Mic, LineChart, ShieldCheck, BookOpen, AudioLines } from 'lucide-react';
 import BentoCard from './BentoCard';
 
 interface AuthLayoutProps {
@@ -35,9 +35,9 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
             className="w-7.5 h-7.5 rounded-lg flex items-center justify-center"
             style={{ backgroundColor: 'var(--theme-brand)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)' }}
           >
-            <Mic className="text-white w-4 h-4" strokeWidth={2.25} />
+            <AudioLines className="text-white w-4 h-4" strokeWidth={2.25} />
           </div>
-          <span style={{ color: 'var(--theme-text)' }} className="font-serif font-bold text-lg tracking-tight">Aura</span>
+          <span style={{ color: 'var(--theme-text)' }} className="font-serif font-bold text-lg tracking-tight">Vox</span>
         </div>
 
         {/* Bento Grid */}
@@ -108,7 +108,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
 
         {/* Footer info */}
         <div style={{ color: 'var(--theme-text-soft)' }} className="mt-auto relative z-10 text-[11px]">
-          © {new Date().getFullYear()} Aura. Structured for financial literacy.
+          © {new Date().getFullYear()} Vox. Structured for financial literacy.
         </div>
       </div>
 
@@ -122,9 +122,9 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
                 className="w-7.5 h-7.5 rounded-lg flex items-center justify-center"
                 style={{ backgroundColor: 'var(--theme-brand)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)' }}
               >
-                <Mic className="text-white w-4 h-4" strokeWidth={2.25} />
+                <AudioLines className="text-white w-4 h-4" strokeWidth={2.25} />
               </div>
-              <span style={{ color: 'var(--theme-text)' }} className="font-serif font-bold text-lg tracking-tight">Aura</span>
+              <span style={{ color: 'var(--theme-text)' }} className="font-serif font-bold text-lg tracking-tight">Vox</span>
             </div>
           </div>
 
