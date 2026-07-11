@@ -49,7 +49,7 @@ export default function SignInForm() {
   };
 
   const handleGoogleSignIn = () => {
-    signInWithGoogle('Aura');
+    signInWithGoogle('Vox');
   };
 
   if (loading) {
