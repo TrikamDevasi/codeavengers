@@ -89,7 +89,7 @@ export default function SignUpForm() {
   };
 
   const handleGoogleSignUp = () => {
-    signInWithGoogle('Aura');
+    signInWithGoogle('Vox');
   };
 
   const strengthPercent = (passwordStrength.score / 6) * 100;
@@ -150,7 +150,7 @@ export default function SignUpForm() {
           Create Account
         </h1>
         <p style={{ color: 'var(--theme-text-muted)' }} className="text-xs">
-          Join Aura to unlock safe educational reports
+          Join Vox to unlock safe educational reports
         </p>
       </div>
 
