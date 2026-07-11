@@ -18,7 +18,6 @@ export default function Assessment() {
       try {
         const conv = await createConversation(user?.id);
         setConversationId(conv._id);
-        // Store for report generation
         localStorage.setItem('conversationId', conv._id);
         setIsLoading(false);
       } catch (error) {
@@ -31,7 +30,6 @@ export default function Assessment() {
 
   const handleComplete = () => {
     setIsComplete(true);
-    // Navigate to processing after a brief delay
     setTimeout(() => {
       navigate('/processing');
     }, 1500);
@@ -51,10 +49,11 @@ export default function Assessment() {
   return (
     <div style={{ backgroundColor: 'var(--theme-bg)' }} className="min-h-screen flex flex-col font-sans antialiased">
       {/* Top Navigation */}
-      <header style={{ backgroundColor: 'var(--theme-surface)', borderBottomColor: 'var(--theme-border)' }} className="border-b px-6 py-4 flex items-center justify-between shrink-0">
+      <header style={{ backgroundColor: 'var(--theme-surface)', borderBottomColor: 'var(--theme-border)' }} className="border-b px-4 md:px-6 py-4 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/')}
+            aria-label="Close assessment"
             style={{ color: 'var(--theme-text-muted)' }}
             className="p-2 rounded-lg transition-colors cursor-pointer hover:opacity-70"
           >
@@ -78,30 +77,47 @@ export default function Assessment() {
             </div>
           </div>
         </div>
-        <button style={{ color: 'var(--theme-text-muted)' }} className="p-2 rounded-lg transition-colors cursor-pointer hover:opacity-70">
+        <button
+          aria-label="Settings"
+          style={{ color: 'var(--theme-text-muted)' }}
+          className="p-2 rounded-lg transition-colors cursor-pointer hover:opacity-70"
+        >
           <Settings size={18} />
         </button>
       </header>
 
-      {/* Chat Area */}
-      <main className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col gap-5 max-w-2xl mx-auto w-full pb-36">
-        <div className="flex flex-col items-center justify-center mb-8 pt-4">
-          <div style={{ backgroundColor: 'var(--theme-brand-light)', borderColor: 'var(--theme-brand)', color: 'var(--theme-brand)' }} className="w-10 h-10 border rounded-lg flex items-center justify-center mb-4">
-            <ShieldCheck className="w-5 h-5" strokeWidth={2.25} />
+      {/* Card Container */}
+      <main className="flex-1 overflow-hidden p-4 md:p-8 flex justify-center">
+        <div
+          style={{
+            backgroundColor: 'var(--theme-surface)',
+            border: '2px solid var(--theme-border)',
+            boxShadow: '4px 4px 0 var(--theme-ink)',
+          }}
+          className="w-full max-w-2xl rounded-xl flex flex-col h-full"
+        >
+          {/* Card Header */}
+          <div className="p-6 flex flex-col items-center justify-center border-b" style={{ borderColor: 'var(--theme-border-soft)' }}>
+            <div style={{ backgroundColor: 'var(--theme-brand-light)', borderColor: 'var(--theme-brand)', color: 'var(--theme-brand)' }} className="w-10 h-10 border rounded-lg flex items-center justify-center mb-4">
+              <ShieldCheck className="w-5 h-5" strokeWidth={2.25} />
+            </div>
+            <h2 style={{ color: 'var(--theme-text)' }} className="font-serif text-xl font-semibold tracking-tight">Let's build your profile</h2>
+            <p style={{ color: 'var(--theme-text-muted)' }} className="text-xs text-center max-w-xs mt-1.5 leading-relaxed">
+              Speak naturally. We'll adapt follow-up prompts dynamically based on what you share.
+            </p>
           </div>
-          <h2 style={{ color: 'var(--theme-text)' }} className="font-serif text-xl font-semibold tracking-tight">Let's build your profile</h2>
-          <p style={{ color: 'var(--theme-text-muted)' }} className="text-xs text-center max-w-xs mt-1.5 leading-relaxed">
-            Speak naturally. We'll adapt follow-up prompts dynamically based on what you share.
-          </p>
-        </div>
 
-        {conversationId && (
-          <ChatInterface
-            conversationId={conversationId}
-            onMessageSent={() => {}}
-            onComplete={handleComplete}
-          />
-        )}
+          {/* Chat Area */}
+          <div className="flex-1 overflow-hidden p-4 md:p-6">
+            {conversationId && (
+              <ChatInterface
+                conversationId={conversationId}
+                onMessageSent={() => {}}
+                onComplete={handleComplete}
+              />
+            )}
+          </div>
+        </div>
       </main>
     </div>
   );
